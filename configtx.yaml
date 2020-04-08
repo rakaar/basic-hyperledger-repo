@@ -1,0 +1,206 @@
+# Copyright IBM Corp. All Rights Reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+---
+Organizations:
+    - &OrdererOrg
+        Name: OrdererOrg
+        ID: OrdererMSP
+        MSPDir: crypto-config/ordererOrganizations/example.com/msp
+        Policies:
+            Readers:
+                Type: Signature
+                Rule: "OR('OrdererMSP.member')"
+            Writers:
+                Type: Signature
+                Rule: "OR('OrdererMSP.member')"
+            Admins:
+                Type: Signature
+                Rule: "OR('OrdererMSP.admin')"
+
+    - &govt
+        Name: govtMSP
+        ID: govtMSP
+        MSPDir: crypto-config/peerOrganizations/govt.example.com/msp
+        Policies:
+            Readers:
+                Type: Signature
+                Rule: "OR('govtMSP.admin', 'govtMSP.peer', 'govtMSP.client')"
+            Writers:
+                Type: Signature
+                Rule: "OR('govtMSP.admin', 'govtMSP.client')"
+            Admins:
+                Type: Signature
+                Rule: "OR('govtMSP.admin')"
+
+    - &ngo
+        Name: ngoMSP
+        ID: ngoMSP
+        MSPDir: crypto-config/peerOrganizations/ngo.example.com/msp
+        Policies:
+            Readers:
+                Type: Signature
+                Rule: "OR('ngoMSP.admin', 'ngoMSP.peer', 'ngoMSP.client')"
+            Writers:
+                Type: Signature
+                Rule: "OR('ngoMSP.admin', 'ngoMSP.client')"
+            Admins:
+                Type: Signature
+                Rule: "OR('ngoMSP.admin')"
+                
+    - &univ
+        Name: univMSP
+        ID: univMSP
+        MSPDir: crypto-config/peerOrganizations/univ.example.com/msp
+        Policies:
+            Readers:
+                Type: Signature
+                Rule: "OR('univMSP.admin', 'univMSP.peer', 'univMSP.client')"
+            Writers:
+                Type: Signature
+                Rule: "OR('univMSP.admin', 'univMSP.client')"
+            Admins:
+                Type: Signature
+                Rule: "OR('univMSP.admin')"
+                
+    - &pvtbodies
+        Name: pvtbodiesMSP
+        ID: pvtbodiesMSP
+        MSPDir: crypto-config/peerOrganizations/pvtbodies.example.com/msp
+        Policies:
+            Readers:
+                Type: Signature
+                Rule: "OR('pvtbodiesMSP.admin', 'pvtbodiesMSP.peer', 'pvtbodiesMSP.client')"
+            Writers:
+                Type: Signature
+                Rule: "OR('pvtbodiesMSP.admin', 'pvtbodiesMSP.client')"
+            Admins:
+                Type: Signature
+                Rule: "OR('pvtbodiesMSP.admin')"
+
+
+    - &public
+        Name: publicMSP
+        ID: publicMSP
+        MSPDir: crypto-config/peerOrganizations/public.example.com/msp
+        Policies:
+            Readers:
+                Type: Signature
+                Rule: "OR('publicMSP.admin', 'publicMSP.peer', 'publicMSP.client')"
+            Writers:
+                Type: Signature
+                Rule: "OR('publicMSP.admin', 'publicMSP.client')"
+            Admins:
+                Type: Signature
+                Rule: "OR('publicMSP.admin')"
+
+
+Capabilities:
+    Channel: &ChannelCapabilities
+        V1_4_3: true
+        V1_3: false
+        V1_1: false
+    Orderer: &OrdererCapabilities
+        V1_4_2: true
+        V1_1: false
+    Application: &ApplicationCapabilities
+        V1_4_2: true
+        V1_3: false
+        V1_2: false
+        V1_1: false
+
+Application: &ApplicationDefaults
+    Organizations:
+    Policies:
+        Readers:
+            Type: ImplicitMeta
+            Rule: "ANY Readers"
+        Writers:
+            Type: ImplicitMeta
+            Rule: "ANY Writers"
+        Admins:
+            Type: ImplicitMeta
+            Rule: "MAJORITY Admins"
+
+    Capabilities:
+        <<: *ApplicationCapabilities
+
+Orderer: &OrdererDefaults
+    OrdererType: solo
+    Addresses:
+        - orderer.example.com:7050
+    BatchTimeout: 2s
+    BatchSize:
+        MaxMessageCount: 10
+        AbsoluteMaxBytes: 99 MB
+        PreferredMaxBytes: 512 KB
+
+    Kafka:
+        Brokers:
+            - 127.0.0.1:9092
+
+    Organizations:
+
+    Policies:
+        Readers:
+            Type: ImplicitMeta
+            Rule: "ANY Readers"
+        Writers:
+            Type: ImplicitMeta
+            Rule: "ANY Writers"
+        Admins:
+            Type: ImplicitMeta
+            Rule: "MAJORITY Admins"
+        BlockValidation:
+            Type: ImplicitMeta
+            Rule: "ANY Writers"
+
+Channel: &ChannelDefaults
+    Policies:
+        Readers:
+            Type: ImplicitMeta
+            Rule: "ANY Readers"
+        Writers:
+            Type: ImplicitMeta
+            Rule: "ANY Writers"
+        Admins:
+            Type: ImplicitMeta
+            Rule: "MAJORITY Admins"
+    Capabilities:
+        <<: *ChannelCapabilities
+
+Profiles:
+
+    SupplyOrdererGenesis:
+        <<: *ChannelDefaults
+        Orderer:
+            <<: *OrdererDefaults
+            Organizations:
+                - *OrdererOrg
+            Capabilities:
+                <<: *OrdererCapabilities
+        Consortiums:
+            SampleConsortium:
+                Organizations:
+                    - *govt
+                    - *ngo
+                    - *univ
+                    - *pvtbodies
+                    - *public
+
+    SupplyChannel:
+        Consortium: SampleConsortium
+        <<: *ChannelDefaults
+        Application:
+            <<: *ApplicationDefaults
+            Organizations:
+                - *govt
+                - *ngo
+                - *univ
+                - *pvtbodies
+                - *public
+            Capabilities:
+                <<: *ApplicationCapabilities
+
